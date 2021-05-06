@@ -4,32 +4,33 @@
 @author:fangpf
 @time: 2020/12/25
 """
+
 import os
 import numpy as np
 import cv2
 
-image_path = 'data/garbage/train_data/'
+ROOT_PATH = 'data/garbage/train_data/'
 
 
-def cal():
-    images = os.listdir(image_path)
-    mean = 0
-    std = 0
+def cal_mean_std():
+    mean, std = None, None
+    images = os.listdir(ROOT_PATH)
     for image in images:
-        im = cv2.imread(image_path + image, cv2.IMREAD_GRAYSCALE)
-        im = im / 255.0
-        mean += np.mean(im)
-        std += np.std(im)
-        # cv2.imshow('im', im)
-        # cv2.waitKey()
-        # cv2.destroyAllWindows()
-        # break
-    mean = mean / len(images)
-    std = std / len(images)
-    print(mean, std)
-    # mean  0.5682917131747312
-    # std   0.38947670385076305
+        im = cv2.imread(os.path.join(ROOT_PATH, image))
+        im = im[:, :, ::-1] / 255.
+        # im = im.reshape(1, im.shape[0], im.shape[1], im.shape[2])
+        if mean is None and std is None:
+            mean, std = cv2.meanStdDev(im)
+        else:
+            mean_, std_ = cv2.meanStdDev(im)
+            mean_stack = np.stack((mean, mean_), axis=0)
+            std_stack = np.stack((std, std_), axis=0)
+            mean = np.mean(mean_stack, axis=0)
+            std = np.mean(std_stack, axis=0)
+    return mean.reshape((1, 3))[0], std.reshape((1, 3))[0]
 
 
 if __name__ == '__main__':
-    cal()
+    mean, std = cal_mean_std()
+    print(mean, std)
+    # [0.68768471 0.58804662 0.49177842] [0.18491538 0.23386126 0.28080707]
